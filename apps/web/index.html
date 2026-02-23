@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tax Statement Intelligence</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <main class="shell">
+      <header class="hero">
+        <p class="kicker">BOOKKEEPING AI</p>
+        <h1>Tax Statement Intelligence</h1>
+        <p class="sub">
+          Parse, classify, and review bank/card statements for Schedule C (2024) and Form 1120 (2025).
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <div class="actions">
+          <button id="bootstrapBtn">Bootstrap Default Tenant</button>
+          <button id="scanBtn">Scan Local `/2024`</button>
+          <button id="processBtn">Process Pending</button>
+        </div>
+        <div class="filters">
+          <label>
+            Tenant
+            <select id="tenantSelect"></select>
+          </label>
+          <label>
+            Tax Year
+            <select id="yearSelect">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+            </select>
+          </label>
+          <button id="refreshBtn" class="secondary">Refresh</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel stat">
+          <h2>Statements</h2>
+          <p id="statementCount">0</p>
+        </article>
+        <article class="panel stat">
+          <h2>Transactions</h2>
+          <p id="transactionCount">0</p>
+        </article>
+        <article class="panel stat">
+          <h2>Open Reviews</h2>
+          <p id="reviewCount">0</p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Statement Queue</h2>
+          <button id="processAllBtn" class="secondary">Process Pending</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Institution</th>
+                <th>Account</th>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Diagnostics</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="statementRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Review Queue (Low Confidence / Mismatch)</h2>
+          <button id="reloadReviewsBtn" class="secondary">Reload</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Reason</th>
+                <th>Detail</th>
+                <th>Statement</th>
+                <th>Transaction</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="reviewRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Classification Rules</h2>
+          <button id="reloadRulesBtn" class="secondary">Reload Rules</button>
+        </div>
+        <div class="filters">
+          <label>
+            Category
+            <input id="ruleCategoryInput" type="text" placeholder="e.g. supplies" />
+          </label>
+          <label>
+            Pattern (regex)
+            <input id="rulePatternInput" type="text" placeholder="\\bamazon\\s*marketplace\\b" />
+          </label>
+          <label>
+            Scope
+            <select id="ruleScopeInput">
+              <option value="TENANT">TENANT</option>
+              <option value="ACCOUNT">ACCOUNT</option>
+            </select>
+          </label>
+          <label>
+            Account Label
+            <input id="ruleAccountInput" type="text" placeholder="Only for ACCOUNT scope" />
+          </label>
+          <button id="createRuleBtn">Create Rule</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Scope</th>
+                <th>Category</th>
+                <th>Pattern</th>
+                <th>Priority</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ruleRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Tax Summary</h2>
+          <div class="summary-actions">
+            <button id="summaryBtn">Generate Summary</button>
+            <a id="csvLink" class="secondary-link" href="#" target="_blank">Download CSV</a>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>IRS Line</th>
+                <th>Count</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="summaryRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel logs">
+        <h2>Activity Log</h2>
+        <pre id="logPanel"></pre>
+      </section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
