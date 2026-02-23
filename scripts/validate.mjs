@@ -5,6 +5,11 @@ import { ENTITY_TYPES, TAXONOMY_IDS } from "../apps/api/src/domain/constants.mjs
 import { getTaxonomyForEntityYear } from "../apps/api/src/domain/taxonomies.mjs";
 import { ClassificationService } from "../apps/api/src/services/classification/classification-service.mjs";
 import { createTenantRule, listTenantRules } from "../apps/api/src/services/classification/rule-service.mjs";
+import {
+  hasInstitutionAdapter,
+  listSupportedInstitutions,
+  resolveParserAdapter,
+} from "../apps/api/src/services/parser/institution-adapters.mjs";
 import { detectFolderYearMismatch, inferStatementPeriod } from "../apps/api/src/services/parser/statement-parser.mjs";
 
 async function run() {
@@ -56,6 +61,18 @@ async function run() {
   const period = inferStatementPeriod(discoverPath);
   assert.equal(period.year, 2025);
   assert.equal(detectFolderYearMismatch(path.join(workspaceRoot, "2024"), discoverPath, period.year), true);
+
+  for (const institution of listSupportedInstitutions()) {
+    assert.equal(hasInstitutionAdapter(institution), true);
+    const adapter = resolveParserAdapter(institution);
+    assert.equal(adapter.fallbackToGeneric, false);
+    assert.equal(adapter.institution, institution);
+    assert.match(adapter.method, /_V1$/);
+  }
+
+  const fallbackAdapter = resolveParserAdapter("UNKNOWN_BANK");
+  assert.equal(fallbackAdapter.fallbackToGeneric, true);
+  assert.equal(fallbackAdapter.method, "GENERIC_V1");
 }
 
 try {

@@ -1,6 +1,7 @@
 import {
   CLASSIFICATION_METHOD,
   CONFIDENCE_THRESHOLD,
+  PARSER_CONFIDENCE_THRESHOLD,
   REVIEW_REASON,
   REVIEW_STATUS,
   STATEMENT_STATUS,
@@ -55,10 +56,35 @@ function addAuditEvent(db, tenantId, action, payload) {
   });
 }
 
+function shouldCreateParseWarning(diagnostics) {
+  if (!diagnostics) {
+    return true;
+  }
+  if ((diagnostics.parsedTransactions ?? 0) === 0) {
+    return true;
+  }
+  if (!Number.isFinite(diagnostics.parserConfidence)) {
+    return false;
+  }
+  return diagnostics.parserConfidence < PARSER_CONFIDENCE_THRESHOLD;
+}
+
+function buildParseWarningDetail(diagnostics) {
+  const method = diagnostics?.parseMethod ?? "UNKNOWN";
+  const confidence = Number.isFinite(diagnostics?.parserConfidence)
+    ? diagnostics.parserConfidence.toFixed(3)
+    : "n/a";
+  const parsed = diagnostics?.parsedTransactions ?? 0;
+  const candidates = diagnostics?.candidateLines ?? 0;
+  const fallback = diagnostics?.fallbackToGeneric ? "yes" : "no";
+  return `method=${method} confidence=${confidence} parsed=${parsed}/${candidates} fallback=${fallback} threshold=${PARSER_CONFIDENCE_THRESHOLD.toFixed(2)}`;
+}
+
 export async function processStatementById({
   store,
   statementId,
   classificationService = new ClassificationService(),
+  parseStatement = parseStatementPdf,
 }) {
   let result = null;
 
@@ -84,9 +110,19 @@ export async function processStatementById({
       return db;
     }
 
-    const parsed = await parseStatementPdf({
+    const hasExistingArtifacts =
+      db.transactions.some((tx) => tx.tenantId === statement.tenantId && tx.statementId === statement.id) ||
+      db.reviewQueue.some((item) => item.tenantId === statement.tenantId && item.statementId === statement.id);
+    if (hasExistingArtifacts) {
+      db.transactions = db.transactions.filter((tx) => !(tx.tenantId === statement.tenantId && tx.statementId === statement.id));
+      db.reviewQueue = db.reviewQueue.filter((item) => !(item.tenantId === statement.tenantId && item.statementId === statement.id));
+    }
+
+    const parsed = await parseStatement({
       filePath: statement.storedPath,
       statementYear: statement.statementYear ?? taxonomy.taxYear,
+      institution: statement.institution,
+      accountLabel: statement.accountLabel,
     });
     statement.parseDiagnostics = parsed.diagnostics;
 
@@ -100,12 +136,14 @@ export async function processStatementById({
       });
     }
 
-    const existingTxIds = new Set(
-      db.transactions.filter((tx) => tx.tenantId === statement.tenantId && tx.statementId === statement.id).map((tx) => tx.id),
-    );
-    if (existingTxIds.size > 0) {
-      db.transactions = db.transactions.filter((tx) => !(tx.tenantId === statement.tenantId && tx.statementId === statement.id));
-      db.reviewQueue = db.reviewQueue.filter((item) => !(item.tenantId === statement.tenantId && item.statementId === statement.id));
+    if (shouldCreateParseWarning(statement.parseDiagnostics)) {
+      createReviewItem({
+        db,
+        tenantId: statement.tenantId,
+        statementId: statement.id,
+        reason: REVIEW_REASON.PARSE_WARNING,
+        detail: buildParseWarningDetail(statement.parseDiagnostics),
+      });
     }
 
     const tenantRules = listTenantRules({ db, tenantId: statement.tenantId, includeInactive: false });
@@ -186,6 +224,7 @@ export async function processPendingStatements({
   store,
   limit = 10,
   classificationService = new ClassificationService(),
+  parseStatement = parseStatementPdf,
 }) {
   const db = await store.read();
   const pending = db.statements
@@ -198,6 +237,7 @@ export async function processPendingStatements({
       store,
       statementId: statement.id,
       classificationService,
+      parseStatement,
     });
     processed.push(result);
   }

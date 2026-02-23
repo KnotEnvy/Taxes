@@ -79,9 +79,16 @@ function renderStatements(statements) {
   for (const statement of statements) {
     const tr = document.createElement("tr");
     const period = `${statement.statementYear ?? "?"}-${String(statement.statementMonth ?? 0).padStart(2, "0")}`;
-    const diag = statement.parseDiagnostics
-      ? `${statement.parseDiagnostics.parsedTransactions} tx / ${statement.parseDiagnostics.textLines} lines`
-      : "-";
+    let diag = "-";
+    if (statement.parseDiagnostics) {
+      const parsed = statement.parseDiagnostics.parsedTransactions ?? 0;
+      const lines = statement.parseDiagnostics.textLines ?? 0;
+      const method = statement.parseDiagnostics.parseMethod ?? "UNKNOWN";
+      const confidence = Number.isFinite(statement.parseDiagnostics.parserConfidence)
+        ? statement.parseDiagnostics.parserConfidence.toFixed(2)
+        : "n/a";
+      diag = `${parsed} tx / ${lines} lines | ${method} (${confidence})`;
+    }
 
     tr.innerHTML = `
       <td>${statement.institution}</td>

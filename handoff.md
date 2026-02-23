@@ -15,6 +15,7 @@ Audience: fresh engineer/agent taking over this repository.
 - Router: `apps/api/src/router.mjs`
 - Processing pipeline: `apps/api/src/services/statement-processor.mjs`
 - Parser: `apps/api/src/services/parser/statement-parser.mjs`
+- Parser adapter registry: `apps/api/src/services/parser/institution-adapters.mjs`
 - Rule services: `apps/api/src/services/classification/rule-service.mjs`
 - Rule engine: `apps/api/src/services/classification/rules-engine.mjs`
 - Worker: `apps/worker/src/index.mjs`
@@ -82,10 +83,16 @@ node apps/worker/src/index.mjs --once
 - Port `3000` may already be occupied by another process in shared environments.
 
 ## 6) Critical pitfalls to address first
-- Parser can extract non-transaction metadata lines.
+- Parser still uses a shared extraction core; institution adapters are currently dispatch + noise tuning, not fully custom row parsers yet.
 - Rule learning can generate low-quality regex if source transaction text is noisy.
 - Current Postgres store uses snapshot-style synchronization; not scalable for production throughput.
 - RLS policy currently allows access when `app.tenant_id` is unset; tighten for production.
+
+## 6.1) Latest incremental changes (P0-1 kickoff)
+- Added institution adapter registry with explicit generic fallback.
+- Parser diagnostics now include method + confidence + quality counters.
+- `statement-processor` now creates `PARSE_WARNING` review items when parser confidence is low.
+- Added test coverage for adapter mapping/fallback and parse-warning gating.
 
 ## 7) Decision log to preserve
 - Product priority: tax-ready output first, analytics second.
@@ -103,5 +110,5 @@ node apps/worker/src/index.mjs --once
 6. Choose the next sprint item from `backlog.md` and begin implementation.
 
 ## 9) Immediate next target recommended
-Start with `P0-1` in `backlog.md`: institution-specific parser adapters and parser confidence gates.  
-Reason: this reduces downstream errors in classification, rule learning, and tax outputs.
+Continue `P0-1` in `backlog.md`: replace shared parser core with institution-specific row extraction for the six adapters and capture measured precision results per institution.  
+Reason: current adapter dispatch and confidence gating are in place, but precision acceptance criteria are not yet met.

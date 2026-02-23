@@ -5,11 +5,23 @@ Priority legend: P0 = critical, P1 = high, P2 = medium, P3 = later
 
 ## P0-1: Parser reliability upgrade (institution adapters)
 Goal: Stop noisy/non-transaction extraction and get deterministic, bank-specific parsing.
+Status: IN_PROGRESS (started 2026-02-23)
 
 Scope:
 - Build parser adapter interface by institution (`AMEX`, `BLUEVINE`, `CAPITAL_ONE`, `CASH_APP`, `DISCOVER`, `SPACE_COAST`)
 - Add parser confidence/quality metrics per statement
 - Fallback to generic parser only when adapter unavailable
+
+Completed in current increment:
+- Added institution adapter registry with explicit fallback: `apps/api/src/services/parser/institution-adapters.mjs`
+- Parser now emits adapter + quality diagnostics (`parseMethod`, `parserConfidence`, candidate/noise counters)
+- Processor now opens `PARSE_WARNING` review items on low parser confidence
+- Added coverage for adapter mapping/fallback and parse warning gate
+
+Remaining to hit full acceptance:
+- Add truly institution-specific row extraction logic per adapter (currently adapter-specific noise tuning + shared parser core)
+- Measure precision on sampled statements and record institution-level scorecard (target >=95% row precision)
+- Add guardrail to block learned-rule generation from parse-warning statements unless manually approved
 
 Acceptance criteria:
 - At least 95% row precision on manually sampled statements per institution

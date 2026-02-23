@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { extractTextCandidatesFromPdfBuffer } from "./pdf-text-extractor.mjs";
+import { resolveParserAdapter } from "./institution-adapters.mjs";
 
-const NOISE_WORDS = [
+const BASE_NOISE_WORDS = [
   "previous balance",
   "new balance",
   "ending balance",
@@ -45,9 +46,22 @@ function normalizeLine(line) {
   return line.replace(/\s+/g, " ").trim();
 }
 
-function looksLikeNoise(line) {
+function buildNoiseWords(adapter) {
+  const words = new Set(BASE_NOISE_WORDS);
+  for (const phrase of adapter?.noiseWords ?? []) {
+    words.add(phrase.toLowerCase());
+  }
+  return words;
+}
+
+function looksLikeNoise(line, noiseWords) {
   const lower = line.toLowerCase();
-  return NOISE_WORDS.some((phrase) => lower.includes(phrase));
+  for (const phrase of noiseWords) {
+    if (lower.includes(phrase)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function parseAmount(rawAmount) {
@@ -108,9 +122,8 @@ function parseDateToken(line, statementYear) {
   return null;
 }
 
-function parseTransactionLine(line, statementYear) {
-  const normalized = normalizeLine(line);
-  if (normalized.length < 8 || looksLikeNoise(normalized)) {
+function parseTransactionLineFromNormalized(normalized, statementYear) {
+  if (normalized.length < 8) {
     return null;
   }
 
@@ -145,6 +158,30 @@ function parseTransactionLine(line, statementYear) {
     description,
     rawLine: normalized,
   };
+}
+
+function lineLooksLikeTransactionCandidate(line, statementYear, noiseWords) {
+  const normalized = normalizeLine(line);
+  if (normalized.length < 8 || looksLikeNoise(normalized, noiseWords)) {
+    return false;
+  }
+
+  const amounts = normalized.match(AMOUNT_PATTERN);
+  if (!amounts || amounts.length === 0) {
+    return false;
+  }
+
+  const parsedDate = parseDateToken(normalized, statementYear);
+  return Boolean(parsedDate?.value);
+}
+
+export function computeParserConfidence({ parsedTransactions, candidateLines }) {
+  if (candidateLines <= 0) {
+    return parsedTransactions > 0 ? 1 : 0;
+  }
+  const ratio = parsedTransactions / candidateLines;
+  const clamped = Math.max(0, Math.min(1, ratio));
+  return Number.parseFloat(clamped.toFixed(4));
 }
 
 function uniqueTransactions(transactions) {
@@ -276,24 +313,51 @@ export function detectFolderYearMismatch(rootPath, filePath, statementYear) {
   return folderYear !== statementYear && filePath.replaceAll("\\", "/").startsWith(rootPath.replaceAll("\\", "/"));
 }
 
-export async function parseStatementPdf({ filePath, statementYear }) {
+export async function parseStatementPdf({ filePath, statementYear, institution }) {
+  const adapter = resolveParserAdapter(institution);
+  const noiseWords = buildNoiseWords(adapter);
   const bytes = await readFile(filePath);
   const lines = extractTextCandidatesFromPdfBuffer(bytes, 7000);
+  let droppedNoiseLines = 0;
+  let candidateLines = 0;
   const transactions = [];
 
   for (const line of lines) {
-    const tx = parseTransactionLine(line, statementYear);
+    const normalized = normalizeLine(line);
+    if (normalized.length < 8) {
+      continue;
+    }
+    if (looksLikeNoise(normalized, noiseWords)) {
+      droppedNoiseLines += 1;
+      continue;
+    }
+    if (lineLooksLikeTransactionCandidate(normalized, statementYear, noiseWords)) {
+      candidateLines += 1;
+    }
+    const tx = parseTransactionLineFromNormalized(normalized, statementYear);
     if (tx) {
       transactions.push(tx);
     }
   }
 
+  const rawParsedTransactions = transactions.length;
   const deduped = uniqueTransactions(transactions).slice(0, 2000);
+  const parserConfidence = computeParserConfidence({
+    parsedTransactions: deduped.length,
+    candidateLines,
+  });
   return {
     transactions: deduped,
     diagnostics: {
+      parseMethod: adapter.method,
+      institutionAdapter: adapter.institution,
+      fallbackToGeneric: adapter.fallbackToGeneric,
       textLines: lines.length,
+      droppedNoiseLines,
+      candidateLines,
+      rawParsedTransactions,
       parsedTransactions: deduped.length,
+      parserConfidence,
     },
   };
 }

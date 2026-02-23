@@ -8,6 +8,27 @@ Build a scalable full-stack baseline to parse, analyze, and categorize bank/cred
 - 2024 Sole Proprietorship (Schedule C-aligned categories)
 - 2025 C-Corp (Form 1120-aligned categories)
 
+## Incremental Update (P0-1 kickoff, 2026-02-23)
+
+- Added institution parser adapter registry in `apps/api/src/services/parser/institution-adapters.mjs` for:
+  - `AMEX`, `BLUEVINE`, `CAPITAL_ONE`, `CASH_APP`, `DISCOVER`, `SPACE_COAST`
+  - explicit fallback to `GENERIC_V1` when no adapter is available
+- Upgraded parser diagnostics in `apps/api/src/services/parser/statement-parser.mjs`:
+  - now emits `parseMethod`, `institutionAdapter`, `fallbackToGeneric`, `parserConfidence`
+  - includes quality counters: `droppedNoiseLines`, `candidateLines`, `rawParsedTransactions`, `parsedTransactions`
+- Added parser confidence gate in `apps/api/src/services/statement-processor.mjs`:
+  - low-confidence parses create `REVIEW_REASON.PARSE_WARNING`
+  - parser context is captured in review detail for operator triage
+- Updated dashboard statement diagnostics rendering in `apps/web/app.js` to show parse method + confidence.
+- Added tests:
+  - `tests/parser-adapters.test.mjs` (adapter coverage + fallback behavior)
+  - `tests/statement-processor.test.mjs` (parse warning gate behavior)
+- Updated validation in `scripts/validate.mjs` with adapter resolution assertions.
+
+Validation snapshot after this increment:
+- `node scripts/validate.mjs` passes.
+- `node --test tests/*.test.mjs` is blocked in this environment by `spawn EPERM` (known sandbox limitation).
+
 ## What Was Implemented
 
 ## 1) Application skeleton

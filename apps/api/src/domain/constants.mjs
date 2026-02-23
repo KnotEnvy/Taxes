@@ -34,6 +34,7 @@ export const CLASSIFICATION_METHOD = Object.freeze({
 });
 
 export const CONFIDENCE_THRESHOLD = 0.85;
+export const PARSER_CONFIDENCE_THRESHOLD = 0.25;
 
 export const DEFAULT_TENANT = Object.freeze({
   id: "tenant_local_cleaning",

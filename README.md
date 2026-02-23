@@ -29,7 +29,9 @@ The app now supports two storage backends selected by `TAXES_STORE`:
 - PDF parsing pipeline:
   - text-operator extraction
   - flate stream decompression where possible
-  - heuristic transaction line parsing
+  - institution adapter dispatch (`AMEX`, `BLUEVINE`, `CAPITAL_ONE`, `CASH_APP`, `DISCOVER`, `SPACE_COAST`) with generic fallback
+  - adapter-aware transaction parsing diagnostics (`parseMethod`, `parserConfidence`, `fallbackToGeneric`, candidate/noise counters)
+  - parse warning review gate when parser confidence is low
 - Hybrid categorization:
   - deterministic rule engine
   - AI provider abstraction (mock provider included)
@@ -142,6 +144,7 @@ node scripts/validate.mjs
 - `apps/api/src/services/statement-ingest-service.mjs`
 - `apps/api/src/services/statement-processor.mjs`
 - `apps/api/src/services/parser/statement-parser.mjs`
+- `apps/api/src/services/parser/institution-adapters.mjs`
 - `apps/api/src/services/classification/classification-service.mjs`
 - `apps/api/src/services/classification/rules-engine.mjs`
 - `apps/api/src/services/classification/rule-service.mjs`
@@ -151,6 +154,19 @@ node scripts/validate.mjs
 - `apps/web/app.js`
 - `infra/postgres/schema.sql`
 - `scripts/db/apply-schema.mjs`
+
+## Parser Diagnostics
+
+Each processed statement now stores parser diagnostics in `statement.parseDiagnostics`, including:
+
+- `parseMethod` (adapter method id, e.g. `AMEX_V1`, `GENERIC_V1`)
+- `institutionAdapter` (resolved institution adapter)
+- `fallbackToGeneric` (whether adapter fallback was used)
+- `textLines`, `droppedNoiseLines`, `candidateLines`
+- `rawParsedTransactions`, `parsedTransactions`
+- `parserConfidence` (0..1)
+
+Low parser confidence creates a `PARSE_WARNING` review item so statement QA can catch extraction quality issues before rule learning/classification drift.
 
 ## Data and Storage
 
