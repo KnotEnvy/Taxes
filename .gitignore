@@ -5,3 +5,6 @@ storage/statements/*
 !storage/statements/.gitkeep
 .npm-cache
 *.log
+*.pdf
+
+
