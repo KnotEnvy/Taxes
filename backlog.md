@@ -34,6 +34,7 @@ Remaining to hit full acceptance:
 - Measure precision on sampled statements and record institution-level scorecard (target >=95% row precision)
 - Replace curated precision samples with real sampled statement exports and track trend over time
 - Restore real-statement transaction extraction coverage (current real-data scorecard shows zero candidate/parsed rows on sampled statements across institutions)
+- Label real sampled lines in `data/parser-real-samples.json` and run `scripts/parser-real-data-harness.mjs score` to produce true precision/recall metrics
 
 Acceptance criteria:
 - At least 95% row precision on manually sampled statements per institution

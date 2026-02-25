@@ -1,6 +1,6 @@
 # Handoff Guide
 
-Date: 2026-02-24  
+Date: 2026-02-25  
 Audience: fresh engineer/agent taking over this repository.
 
 ## 1) What you are inheriting
@@ -106,6 +106,7 @@ node apps/worker/src/index.mjs --once
   - `scripts/parser-real-data-harness.mjs scorecard`
   - `scripts/parser-real-data-harness.mjs collect`
   - `scripts/parser-real-data-harness.mjs score`
+- Added CMap-aware PDF text decoding path in `apps/api/src/services/parser/pdf-text-extractor.mjs` to improve real statement text reconstruction.
 - Real-data scorecard currently reports zero candidate/parsed rows on sampled statements for all institutions, indicating extraction coverage gaps on real PDFs still need to be solved before precision targets are meaningful.
 - Added report service builders for income statement, balance sheet, financial insights, and tax detail:
   - `buildIncomeStatement`
@@ -138,3 +139,18 @@ node apps/worker/src/index.mjs --once
 ## 9) Immediate next target recommended
 Continue `P0-1` in `backlog.md`: tune adapter heuristics using real sampled statement lines and capture measured precision results per institution.  
 Reason: adapter-specific parsing exists for all target institutions, but precision acceptance criteria are not yet measured/verified.
+
+## 10) Current blockers snapshot (must resolve next)
+- Real-data parser scorecard is still zeroed across sampled institutions:
+  - Artifact: `data/parser-real-scorecard.json`
+  - Symptom: `candidateLines=0`, `parsedTransactions=0`, `parserConfidence=0` in sampled statements.
+- Real-data sample file currently contains only unlabeled rows:
+  - Artifact: `data/parser-real-samples.json`
+  - Symptom: `labelStatus=UNLABELED` for all rows, no precision/recall can be computed yet.
+- Curated sample harness passes, but does not represent real PDFs:
+  - Command: `node scripts/parser-precision-sample.mjs` (passes)
+  - Risk: false confidence unless real-data scorecard and labeled precision improve.
+- `node --test tests/*.test.mjs` may fail in sandbox environments with `spawn EPERM`; use targeted tests and `node scripts/validate.mjs`.
+
+## 11) Next-session prompt location
+- Use `next-session-prompt.md` as the copy-paste prompt for the next LLM handoff.

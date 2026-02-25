@@ -132,6 +132,13 @@ node scripts/parser-real-data-harness.mjs collect --maxPerInstitution=3 --sample
 node scripts/parser-real-data-harness.mjs score
 ```
 
+## Current Known Limitations (2026-02-25)
+
+- Real statement extraction is not yet producing usable candidate/transaction rows on sampled statements.
+- `data/parser-real-scorecard.json` currently shows zero `candidateLines` and `parsedTransactions` across sampled institutions.
+- `data/parser-real-samples.json` is generated for labeling, but starts with unlabeled rows and must be labeled before real precision can be measured.
+- Curated parser harness can pass while real-data extraction is still failing; rely on real-data artifacts for go/no-go.
+
 ## Main API Endpoints
 
 - `POST /v1/bootstrap`
