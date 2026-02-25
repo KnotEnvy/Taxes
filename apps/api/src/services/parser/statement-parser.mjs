@@ -41,9 +41,88 @@ const DATE_PATTERNS = [
 ];
 
 const AMOUNT_PATTERN = /(?:\(\$?\d{1,3}(?:,\d{3})*\.\d{2}\)|-?\$?\d{1,3}(?:,\d{3})*\.\d{2})/g;
+const MAX_TRANSACTION_LINE_LENGTH = 240;
+
+const PDF_SYNTAX_NOISE_PATTERN =
+  /(?:<<|>>|\/Type\b|\/Font\b|\/ProcSet\b|\/XObject\b|\/MediaBox\b|\/Contents\b|\/Resources\b|\bendobj\b|\bstream\b|\bendstream\b|\bobj\b)/i;
+
+const METADATA_PREFIX_PATTERN =
+  /^(?:statement|account|summary|activity|period|page|payment|credit|debit|minimum|available)\b(?:\s+[\w#.-]+){0,6}\s*:/i;
+
+const METADATA_DESCRIPTION_PATTERNS = [
+  /\baccount summary\b/i,
+  /\bstatement summary\b/i,
+  /\bactivity summary\b/i,
+  /\bstatement period\b/i,
+  /\bstatement date\b/i,
+  /\bpayment due\b/i,
+  /\bminimum payment\b/i,
+  /\bcredit limit\b/i,
+  /\bavailable credit\b/i,
+  /\bending balance\b/i,
+  /\bbeginning balance\b/i,
+  /\bnew balance\b/i,
+  /\bprevious balance\b/i,
+  /\binterest charge(?:d)?\b/i,
+  /\bfinance charge\b/i,
+  /\btotal fees?\b/i,
+  /\bpage\s+\d+\s+of\s+\d+\b/i,
+];
+
+const METADATA_WORDS = new Set([
+  "account",
+  "summary",
+  "statement",
+  "period",
+  "page",
+  "balance",
+  "payment",
+  "due",
+  "minimum",
+  "credit",
+  "available",
+  "limit",
+  "interest",
+  "finance",
+  "fees",
+  "activity",
+  "rewards",
+  "totals",
+]);
 
 function normalizeLine(line) {
   return line.replace(/\s+/g, " ").trim();
+}
+
+function extractWords(input) {
+  return input.toLowerCase().match(/[a-z]{2,}/g) ?? [];
+}
+
+function isLikelyMetadataDescription(description) {
+  const normalized = normalizeLine(description);
+  if (normalized.length < 3) {
+    return true;
+  }
+
+  for (const pattern of METADATA_DESCRIPTION_PATTERNS) {
+    if (pattern.test(normalized)) {
+      return true;
+    }
+  }
+
+  const words = extractWords(normalized);
+  if (words.length === 0) {
+    return true;
+  }
+
+  const metadataHits = words.filter((word) => METADATA_WORDS.has(word)).length;
+  if (words.length <= 3 && metadataHits >= 2) {
+    return true;
+  }
+  if (metadataHits >= 4 && metadataHits / words.length >= 0.6) {
+    return true;
+  }
+  return false;
 }
 
 function buildNoiseWords(adapter) {
@@ -55,6 +134,16 @@ function buildNoiseWords(adapter) {
 }
 
 function looksLikeNoise(line, noiseWords) {
+  if (line.length > MAX_TRANSACTION_LINE_LENGTH) {
+    return true;
+  }
+  if (PDF_SYNTAX_NOISE_PATTERN.test(line)) {
+    return true;
+  }
+  if (METADATA_PREFIX_PATTERN.test(line)) {
+    return true;
+  }
+
   const lower = line.toLowerCase();
   for (const phrase of noiseWords) {
     if (lower.includes(phrase)) {
@@ -123,7 +212,7 @@ function parseDateToken(line, statementYear) {
 }
 
 function parseTransactionLineFromNormalized(normalized, statementYear) {
-  if (normalized.length < 8) {
+  if (normalized.length < 8 || normalized.length > MAX_TRANSACTION_LINE_LENGTH) {
     return null;
   }
 
@@ -148,7 +237,7 @@ function parseTransactionLineFromNormalized(normalized, statementYear) {
     .replace(amountToken, " ")
     .replace(/\s+/g, " ")
     .trim();
-  if (description.length < 3) {
+  if (description.length < 3 || isLikelyMetadataDescription(description)) {
     return null;
   }
 
@@ -158,6 +247,52 @@ function parseTransactionLineFromNormalized(normalized, statementYear) {
     description,
     rawLine: normalized,
   };
+}
+
+const ADAPTER_LINE_PARSER_HELPERS = Object.freeze({
+  parseAmount,
+  parseDateToken,
+  parseTransactionLineFromNormalized,
+});
+
+function sanitizeParsedTransaction(parsed, rawLine) {
+  if (!parsed) {
+    return null;
+  }
+  if (!parsed.postedDate || !Number.isFinite(parsed.amount)) {
+    return null;
+  }
+  const description = normalizeLine(parsed.description ?? "");
+  if (description.length < 3 || isLikelyMetadataDescription(description)) {
+    return null;
+  }
+
+  return {
+    postedDate: parsed.postedDate,
+    amount: parsed.amount,
+    description,
+    rawLine: normalizeLine(parsed.rawLine ?? rawLine),
+  };
+}
+
+function parseTransactionLineWithAdapter({ normalized, statementYear, adapter }) {
+  if (typeof adapter?.lineParser === "function") {
+    try {
+      const adapted = adapter.lineParser({
+        normalized,
+        statementYear,
+        helpers: ADAPTER_LINE_PARSER_HELPERS,
+      });
+      const sanitized = sanitizeParsedTransaction(adapted, normalized);
+      if (sanitized) {
+        return sanitized;
+      }
+    } catch {
+      // Keep parsing resilient; adapter errors should not stop statement processing.
+    }
+  }
+
+  return sanitizeParsedTransaction(parseTransactionLineFromNormalized(normalized, statementYear), normalized);
 }
 
 function lineLooksLikeTransactionCandidate(line, statementYear, noiseWords) {
@@ -172,7 +307,16 @@ function lineLooksLikeTransactionCandidate(line, statementYear, noiseWords) {
   }
 
   const parsedDate = parseDateToken(normalized, statementYear);
-  return Boolean(parsedDate?.value);
+  if (!parsedDate?.value) {
+    return false;
+  }
+
+  const amountToken = amounts[amounts.length - 1];
+  const description = normalizeLine(normalized.replace(parsedDate.token, " ").replace(amountToken, " "));
+  if (description.length < 3 || isLikelyMetadataDescription(description)) {
+    return false;
+  }
+  return true;
 }
 
 export function computeParserConfidence({ parsedTransactions, candidateLines }) {
@@ -182,6 +326,20 @@ export function computeParserConfidence({ parsedTransactions, candidateLines }) 
   const ratio = parsedTransactions / candidateLines;
   const clamped = Math.max(0, Math.min(1, ratio));
   return Number.parseFloat(clamped.toFixed(4));
+}
+
+export function parseTransactionLineByInstitution({ line, statementYear, institution }) {
+  const adapter = resolveParserAdapter(institution);
+  const noiseWords = buildNoiseWords(adapter);
+  const normalized = normalizeLine(line);
+  if (normalized.length < 8 || looksLikeNoise(normalized, noiseWords)) {
+    return null;
+  }
+  return parseTransactionLineWithAdapter({
+    normalized,
+    statementYear,
+    adapter,
+  });
 }
 
 function uniqueTransactions(transactions) {
@@ -334,7 +492,11 @@ export async function parseStatementPdf({ filePath, statementYear, institution }
     if (lineLooksLikeTransactionCandidate(normalized, statementYear, noiseWords)) {
       candidateLines += 1;
     }
-    const tx = parseTransactionLineFromNormalized(normalized, statementYear);
+    const tx = parseTransactionLineWithAdapter({
+      normalized,
+      statementYear,
+      adapter,
+    });
     if (tx) {
       transactions.push(tx);
     }

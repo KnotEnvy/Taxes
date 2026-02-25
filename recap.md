@@ -29,6 +29,48 @@ Validation snapshot after this increment:
 - `node scripts/validate.mjs` passes.
 - `node --test tests/*.test.mjs` is blocked in this environment by `spawn EPERM` (known sandbox limitation).
 
+## Incremental Update (P0-1 parser specificity, 2026-02-23)
+
+- Added institution-specific line parsers for all six adapters:
+  - `AMEX`, `DISCOVER`, `BLUEVINE`, `CAPITAL_ONE`, `CASH_APP`, `SPACE_COAST`
+  - supports dual-date preference for posted date, month-name rows (`CASH_APP`), and trailing `CR/DB` amount indicators.
+- Parser now routes each line through adapter line parser first, then falls back to the generic line parser for non-matches.
+- Added focused tests in `tests/statement-parser-institution-lines.test.mjs` for:
+  - AMEX CR amount normalization and posted-date selection
+  - DISCOVER dual-date merchant row parsing
+  - institution noise-word metadata suppression behavior
+  - representative line parsing across remaining adapters
+- Extended `scripts/validate.mjs` with adapter-specific line-parse assertions.
+
+Validation snapshot after this increment:
+- `node tests/parser-adapters.test.mjs` passes.
+- `node tests/statement-parser-institution-lines.test.mjs` passes.
+- `node tests/statement-processor.test.mjs` passes.
+- `node scripts/validate.mjs` passes.
+
+## Incremental Update (Rule-learning guardrail + quality checks, 2026-02-23)
+
+- Added learned-rule safety guardrail in `apps/api/src/services/classification/rule-learning-guardrail.mjs`.
+- Wired guardrail into rule-learning paths in `apps/api/src/router.mjs`:
+  - If statement has open `PARSE_WARNING`, learned-rule creation is blocked unless `allowRuleFromParseWarning=true`.
+- Updated dashboard flow in `apps/web/app.js` to allow explicit parse-warning override confirmation when creating learned rules from review resolution.
+- Fixed `buildPatternFromTransaction` in `apps/api/src/services/classification/rule-service.mjs`:
+  - requires first two core tokens but allows one intermediate token and optional suffix tokens
+  - improves pattern reuse against real-world punctuation/separator variance
+- Added tests:
+  - `tests/rule-learning-guardrail.test.mjs`
+  - expanded `tests/rules-learning.test.mjs`
+- Added parser precision sample harness:
+  - `scripts/parser-precision-sample.mjs`
+  - command: `node scripts/parser-precision-sample.mjs`
+  - reports per-institution precision/recall over curated adapter samples with threshold check (`>=0.95`)
+
+Validation snapshot after this increment:
+- `node tests/rules-learning.test.mjs` passes.
+- `node tests/rule-learning-guardrail.test.mjs` passes.
+- `node scripts/parser-precision-sample.mjs` passes.
+- `node scripts/validate.mjs` passes.
+
 ## What Was Implemented
 
 ## 1) Application skeleton

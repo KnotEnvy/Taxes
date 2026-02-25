@@ -24,6 +24,7 @@ test("supported institutions resolve to non-fallback parser adapters", () => {
     assert.equal(adapter.institution, institution);
     assert.equal(adapter.fallbackToGeneric, false);
     assert.match(adapter.method, /_V1$/);
+    assert.equal(typeof adapter.lineParser, "function");
   }
 });
 

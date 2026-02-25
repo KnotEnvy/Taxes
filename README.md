@@ -30,6 +30,7 @@ The app now supports two storage backends selected by `TAXES_STORE`:
   - text-operator extraction
   - flate stream decompression where possible
   - institution adapter dispatch (`AMEX`, `BLUEVINE`, `CAPITAL_ONE`, `CASH_APP`, `DISCOVER`, `SPACE_COAST`) with generic fallback
+  - institution-specific line parsing in adapter layer for all six institutions (dual-date rows, month-name rows, trailing `CR/DB` amount indicators)
   - adapter-aware transaction parsing diagnostics (`parseMethod`, `parserConfidence`, `fallbackToGeneric`, candidate/noise counters)
   - parse warning review gate when parser confidence is low
 - Hybrid categorization:
@@ -40,6 +41,7 @@ The app now supports two storage backends selected by `TAXES_STORE`:
   - optional rule learning from manual review decisions
 - Year mismatch guardrail (`/2024` folder containing 2025 docs is flagged)
 - Tax summary API + CSV export
+- Estimated income statement, balance sheet, financial insights, and extended tax detail reporting APIs
 - Manual review resolution and manual category overrides
 - Audit event logging
 - Web dashboard to run end-to-end workflow
@@ -111,6 +113,25 @@ If your environment blocks Node's spawned test processes, run:
 node scripts/validate.mjs
 ```
 
+Parser precision sample harness:
+
+```powershell
+node scripts/parser-precision-sample.mjs
+```
+
+Real-data parser harness (uses actual statements in `data/db.json`):
+
+```powershell
+# institution scorecard from real statements
+node scripts/parser-real-data-harness.mjs scorecard --maxPerInstitution=3
+
+# collect real statement lines for labeling
+node scripts/parser-real-data-harness.mjs collect --maxPerInstitution=3 --samplePerInstitution=40
+
+# score only labeled rows in data/parser-real-samples.json
+node scripts/parser-real-data-harness.mjs score
+```
+
 ## Main API Endpoints
 
 - `POST /v1/bootstrap`
@@ -132,6 +153,10 @@ node scripts/validate.mjs
 - `POST /v1/transactions/{id}/classify`
 - `GET /v1/reports/tax-summary?tenantId=...&year=2024`
 - `GET /v1/reports/export?tenantId=...&year=2024&format=csv`
+- `GET /v1/reports/income-statement?tenantId=...&year=2024`
+- `GET /v1/reports/balance-sheet?tenantId=...&year=2024`
+- `GET /v1/reports/financial-insights?tenantId=...&year=2024`
+- `GET /v1/reports/tax-detail?tenantId=...&year=2024`
 
 ## Core Files
 
@@ -148,12 +173,14 @@ node scripts/validate.mjs
 - `apps/api/src/services/classification/classification-service.mjs`
 - `apps/api/src/services/classification/rules-engine.mjs`
 - `apps/api/src/services/classification/rule-service.mjs`
+- `apps/api/src/services/classification/rule-learning-guardrail.mjs`
 - `apps/api/src/domain/taxonomies.mjs`
 - `apps/worker/src/index.mjs`
 - `apps/web/index.html`
 - `apps/web/app.js`
 - `infra/postgres/schema.sql`
 - `scripts/db/apply-schema.mjs`
+- `scripts/parser-precision-sample.mjs`
 
 ## Parser Diagnostics
 
@@ -167,6 +194,14 @@ Each processed statement now stores parser diagnostics in `statement.parseDiagno
 - `parserConfidence` (0..1)
 
 Low parser confidence creates a `PARSE_WARNING` review item so statement QA can catch extraction quality issues before rule learning/classification drift.
+
+## Rule-Learning Guardrail
+
+Learned rule creation from manual resolution/classification is blocked when the related statement has an open `PARSE_WARNING`, unless explicitly approved with:
+
+- `allowRuleFromParseWarning: true`
+
+This prevents noisy parser output from automatically generating tenant rules without operator acknowledgment.
 
 ## Data and Storage
 

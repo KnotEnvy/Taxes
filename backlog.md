@@ -17,11 +17,23 @@ Completed in current increment:
 - Parser now emits adapter + quality diagnostics (`parseMethod`, `parserConfidence`, candidate/noise counters)
 - Processor now opens `PARSE_WARNING` review items on low parser confidence
 - Added coverage for adapter mapping/fallback and parse warning gate
+- Added institution-specific line parser hooks for all six institutions with generic fallback for non-matching lines
+- Added learned-rule guardrail for parse warnings (`allowRuleFromParseWarning` required to bypass)
+- Added parser precision sample harness script with per-institution threshold reporting
+- Added parser metadata hardening to block statement-summary/date/period prefix lines from generic and adapter parsing
+- Added parser line-length + PDF-syntax noise filtering guardrails for candidate gating and parsed-line sanitation
+- Added extractor filtering for text-operator/object noise and regression tests (`tests/pdf-text-extractor.test.mjs`)
+- Expanded precision harness with stronger negative samples including metadata-prefixed and PDF-operator-like noise lines
+- Added real-data harness script for statement-backed scorecards and labeling workflow:
+  - `scripts/parser-real-data-harness.mjs scorecard`
+  - `scripts/parser-real-data-harness.mjs collect`
+  - `scripts/parser-real-data-harness.mjs score`
 
 Remaining to hit full acceptance:
-- Add truly institution-specific row extraction logic per adapter (currently adapter-specific noise tuning + shared parser core)
+- Calibrate/iterate institution parser heuristics against real statement samples for precision target
 - Measure precision on sampled statements and record institution-level scorecard (target >=95% row precision)
-- Add guardrail to block learned-rule generation from parse-warning statements unless manually approved
+- Replace curated precision samples with real sampled statement exports and track trend over time
+- Restore real-statement transaction extraction coverage (current real-data scorecard shows zero candidate/parsed rows on sampled statements across institutions)
 
 Acceptance criteria:
 - At least 95% row precision on manually sampled statements per institution
@@ -113,6 +125,29 @@ Acceptance criteria:
 Pitfalls to avoid:
 - Logging without linkage to transaction/rule version
 - Mutable audit rows without tamper evidence
+
+## P1-4: Financial statement and tax-insight reporting
+Goal: Go beyond expense-only summaries with operator-facing financial statement views.
+Status: IN_PROGRESS (started 2026-02-24)
+
+Completed in current increment:
+- Added report APIs: `/v1/reports/income-statement`, `/v1/reports/balance-sheet`, `/v1/reports/financial-insights`, `/v1/reports/tax-detail`
+- Added dashboard panels and rendering logic for income statement, balance sheet, KPI insights, and tax detail
+- Added report aggregation test coverage (`tests/report-service.test.mjs`)
+
+Remaining to hit full acceptance:
+- Replace activity-derived balance estimates with true opening/closing balance support per account
+- Separate true revenue/income inflows from transfer/refund credits using stronger account + category metadata
+- Add period-over-period comparison and export support for new report endpoints
+
+Acceptance criteria:
+- Dashboard shows income statement, balance-sheet view, financial KPIs, and tax-detail breakdown for selected tenant/year
+- API responses include assumptions/limits so estimated values are auditable
+- Report service has deterministic tests for entity-type-specific tax estimates and balance bucket logic
+
+Pitfalls to avoid:
+- Treating estimated activity-based balances as audited book balances
+- Assuming every statement credit is taxable revenue without transfer disambiguation
 
 ## P2-1: Frontend migration and UX maturation
 Goal: Move from prototype dashboard to production operator UI.

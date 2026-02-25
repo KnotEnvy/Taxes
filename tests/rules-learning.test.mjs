@@ -42,4 +42,14 @@ test("buildPatternFromTransaction creates reusable regex pattern", () => {
   assert.equal(typeof pattern, "string");
   const regex = new RegExp(pattern, "i");
   assert.equal(regex.test("AMAZON MARKETPLACE"), true);
+  assert.equal(regex.test("AMAZON MARKETPLACE PMTS"), true);
+});
+
+test("buildPatternFromTransaction tolerates separators and punctuation", () => {
+  const pattern = buildPatternFromTransaction({
+    description: "Acme-Co Payment Ref 1234",
+  });
+  assert.equal(typeof pattern, "string");
+  const regex = new RegExp(pattern, "i");
+  assert.equal(regex.test("ACME CO PAYMENT"), true);
 });

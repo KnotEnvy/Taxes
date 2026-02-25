@@ -1,0 +1,309 @@
+{
+  "generatedAt": "2026-02-24T03:55:24.422Z",
+  "mode": "scorecard",
+  "source": {
+    "dbPath": "D:\\Taxes\\data\\db.json",
+    "tenantId": null,
+    "year": null,
+    "maxPerInstitution": 2,
+    "selectedStatements": 12
+  },
+  "institutionStats": {
+    "AMEX": {
+      "statements": 2,
+      "statementsWithCandidates": 0,
+      "statementsWithParsed": 0,
+      "avgTextLines": 657,
+      "avgCandidateLines": 0,
+      "avgParsedTransactions": 0,
+      "avgParserConfidence": 0,
+      "statementIds": [
+        "stmt_0ad8166f5fca4a07ba3f2217bebbea09",
+        "stmt_56a98d39710f459db57d490506fb73bf"
+      ]
+    },
+    "BLUEVINE": {
+      "statements": 2,
+      "statementsWithCandidates": 0,
+      "statementsWithParsed": 0,
+      "avgTextLines": 356,
+      "avgCandidateLines": 0,
+      "avgParsedTransactions": 0,
+      "avgParserConfidence": 0,
+      "statementIds": [
+        "stmt_a0cbaffe55664b34bf8f5fe1ecffd86a",
+        "stmt_5ef4c60c2e7048e28473157958e1d973"
+      ]
+    },
+    "CAPITAL_ONE": {
+      "statements": 2,
+      "statementsWithCandidates": 0,
+      "statementsWithParsed": 0,
+      "avgTextLines": 145.5,
+      "avgCandidateLines": 0,
+      "avgParsedTransactions": 0,
+      "avgParserConfidence": 0,
+      "statementIds": [
+        "stmt_54ea1ad0d8a9472c92f7ab4f03f27e6e",
+        "stmt_eaa18370ccb24325856d66e3297ac9ea"
+      ]
+    },
+    "CASH_APP": {
+      "statements": 2,
+      "statementsWithCandidates": 0,
+      "statementsWithParsed": 0,
+      "avgTextLines": 406,
+      "avgCandidateLines": 0,
+      "avgParsedTransactions": 0,
+      "avgParserConfidence": 0,
+      "statementIds": [
+        "stmt_fecf8f5625724f00844340bf91546c2e",
+        "stmt_e27e061a8ae54d849b876be7208cec3e"
+      ]
+    },
+    "DISCOVER": {
+      "statements": 2,
+      "statementsWithCandidates": 0,
+      "statementsWithParsed": 0,
+      "avgTextLines": 93.5,
+      "avgCandidateLines": 0,
+      "avgParsedTransactions": 0,
+      "avgParserConfidence": 0,
+      "statementIds": [
+        "stmt_2140cce81ea14b488517a41329a1f5c2",
+        "stmt_60a2e215488146d89bb7fed0fe81f5a2"
+      ]
+    },
+    "SPACE_COAST": {
+      "statements": 2,
+      "statementsWithCandidates": 0,
+      "statementsWithParsed": 0,
+      "avgTextLines": 3105.5,
+      "avgCandidateLines": 0,
+      "avgParsedTransactions": 0,
+      "avgParserConfidence": 0,
+      "statementIds": [
+        "stmt_0ea2a61f171e49f5b7cb030dec4dc1fc",
+        "stmt_f8c5a853e472416b9865ff5ac03a4106"
+      ]
+    }
+  },
+  "statementRows": [
+    {
+      "statementId": "stmt_0ad8166f5fca4a07ba3f2217bebbea09",
+      "institution": "AMEX",
+      "fileName": "2024-01-03.pdf",
+      "status": "NEEDS_REVIEW",
+      "diagnostics": {
+        "parseMethod": "AMEX_V1",
+        "institutionAdapter": "AMEX",
+        "fallbackToGeneric": false,
+        "textLines": 642,
+        "droppedNoiseLines": 0,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_56a98d39710f459db57d490506fb73bf",
+      "institution": "AMEX",
+      "fileName": "2024-02-02.pdf",
+      "status": "NEEDS_REVIEW",
+      "diagnostics": {
+        "parseMethod": "AMEX_V1",
+        "institutionAdapter": "AMEX",
+        "fallbackToGeneric": false,
+        "textLines": 672,
+        "droppedNoiseLines": 0,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_a0cbaffe55664b34bf8f5fe1ecffd86a",
+      "institution": "BLUEVINE",
+      "fileName": "statement_2024_10.pdf",
+      "status": "NEEDS_REVIEW",
+      "diagnostics": {
+        "parseMethod": "BLUEVINE_V1",
+        "institutionAdapter": "BLUEVINE",
+        "fallbackToGeneric": false,
+        "textLines": 438,
+        "droppedNoiseLines": 20,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_5ef4c60c2e7048e28473157958e1d973",
+      "institution": "BLUEVINE",
+      "fileName": "statement_2024_10.pdf",
+      "status": "PROCESSED",
+      "diagnostics": {
+        "parseMethod": "BLUEVINE_V1",
+        "institutionAdapter": "BLUEVINE",
+        "fallbackToGeneric": false,
+        "textLines": 274,
+        "droppedNoiseLines": 19,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_54ea1ad0d8a9472c92f7ab4f03f27e6e",
+      "institution": "CAPITAL_ONE",
+      "fileName": "Statement_052024_6138.pdf",
+      "status": "PROCESSED",
+      "diagnostics": {
+        "parseMethod": "CAPITAL_ONE_V1",
+        "institutionAdapter": "CAPITAL_ONE",
+        "fallbackToGeneric": false,
+        "textLines": 145,
+        "droppedNoiseLines": 1,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_eaa18370ccb24325856d66e3297ac9ea",
+      "institution": "CAPITAL_ONE",
+      "fileName": "Statement_062024_6138.pdf",
+      "status": "PROCESSED",
+      "diagnostics": {
+        "parseMethod": "CAPITAL_ONE_V1",
+        "institutionAdapter": "CAPITAL_ONE",
+        "fallbackToGeneric": false,
+        "textLines": 146,
+        "droppedNoiseLines": 7,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_fecf8f5625724f00844340bf91546c2e",
+      "institution": "CASH_APP",
+      "fileName": "apr-statement.pdf",
+      "status": "PROCESSED",
+      "diagnostics": {
+        "parseMethod": "CASH_APP_V1",
+        "institutionAdapter": "CASH_APP",
+        "fallbackToGeneric": false,
+        "textLines": 413,
+        "droppedNoiseLines": 5,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_e27e061a8ae54d849b876be7208cec3e",
+      "institution": "CASH_APP",
+      "fileName": "aug-statement.pdf",
+      "status": "PROCESSED",
+      "diagnostics": {
+        "parseMethod": "CASH_APP_V1",
+        "institutionAdapter": "CASH_APP",
+        "fallbackToGeneric": false,
+        "textLines": 399,
+        "droppedNoiseLines": 6,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_2140cce81ea14b488517a41329a1f5c2",
+      "institution": "DISCOVER",
+      "fileName": "Discover-AccountActivity-20241112.pdf",
+      "status": "QUEUED",
+      "diagnostics": {
+        "parseMethod": "DISCOVER_V1",
+        "institutionAdapter": "DISCOVER",
+        "fallbackToGeneric": false,
+        "textLines": 70,
+        "droppedNoiseLines": 6,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_60a2e215488146d89bb7fed0fe81f5a2",
+      "institution": "DISCOVER",
+      "fileName": "Discover-AccountActivity-20241212.pdf",
+      "status": "QUEUED",
+      "diagnostics": {
+        "parseMethod": "DISCOVER_V1",
+        "institutionAdapter": "DISCOVER",
+        "fallbackToGeneric": false,
+        "textLines": 117,
+        "droppedNoiseLines": 6,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_0ea2a61f171e49f5b7cb030dec4dc1fc",
+      "institution": "SPACE_COAST",
+      "fileName": "space0524.pdf",
+      "status": "QUEUED",
+      "diagnostics": {
+        "parseMethod": "SPACE_COAST_V1",
+        "institutionAdapter": "SPACE_COAST",
+        "fallbackToGeneric": false,
+        "textLines": 3254,
+        "droppedNoiseLines": 245,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    },
+    {
+      "statementId": "stmt_f8c5a853e472416b9865ff5ac03a4106",
+      "institution": "SPACE_COAST",
+      "fileName": "space0624.pdf",
+      "status": "QUEUED",
+      "diagnostics": {
+        "parseMethod": "SPACE_COAST_V1",
+        "institutionAdapter": "SPACE_COAST",
+        "fallbackToGeneric": false,
+        "textLines": 2957,
+        "droppedNoiseLines": 172,
+        "candidateLines": 0,
+        "rawParsedTransactions": 0,
+        "parsedTransactions": 0,
+        "parserConfidence": 0
+      },
+      "previewTransactions": []
+    }
+  ]
+}

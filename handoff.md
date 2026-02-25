@@ -1,6 +1,6 @@
 # Handoff Guide
 
-Date: 2026-02-23  
+Date: 2026-02-24  
 Audience: fresh engineer/agent taking over this repository.
 
 ## 1) What you are inheriting
@@ -83,16 +83,42 @@ node apps/worker/src/index.mjs --once
 - Port `3000` may already be occupied by another process in shared environments.
 
 ## 6) Critical pitfalls to address first
-- Parser still uses a shared extraction core; institution adapters are currently dispatch + noise tuning, not fully custom row parsers yet.
+- Parser adapters now include institution-specific line parsing, but extraction is still heuristic and needs real-statement precision calibration.
 - Rule learning can generate low-quality regex if source transaction text is noisy.
 - Current Postgres store uses snapshot-style synchronization; not scalable for production throughput.
 - RLS policy currently allows access when `app.tenant_id` is unset; tighten for production.
 
-## 6.1) Latest incremental changes (P0-1 kickoff)
+## 6.1) Latest incremental changes (P0-1 + reporting expansion)
 - Added institution adapter registry with explicit generic fallback.
 - Parser diagnostics now include method + confidence + quality counters.
 - `statement-processor` now creates `PARSE_WARNING` review items when parser confidence is low.
 - Added test coverage for adapter mapping/fallback and parse-warning gating.
+- Added institution-specific line parser behavior for all six institutions while preserving generic fallback for non-matching lines.
+- Added learned-rule guardrail that blocks rule creation on open `PARSE_WARNING` unless explicitly approved.
+- Added parser precision sample harness: `scripts/parser-precision-sample.mjs`.
+- Hardened parser noise filtering to reject metadata-prefixed rows (statement/account/summary/period patterns) and oversized PDF-syntax lines.
+- Hardened PDF text extractor to drop text-operator wrapper/object noise while retaining human-readable transaction text.
+- Added parser noise regression tests:
+  - `tests/statement-parser-institution-lines.test.mjs`
+  - `tests/pdf-text-extractor.test.mjs`
+- Expanded precision sample coverage with additional negative/noise lines (including `UNKNOWN_BANK`) in `scripts/parser-precision-sample.mjs`.
+- Added real-data parser harness script:
+  - `scripts/parser-real-data-harness.mjs scorecard`
+  - `scripts/parser-real-data-harness.mjs collect`
+  - `scripts/parser-real-data-harness.mjs score`
+- Real-data scorecard currently reports zero candidate/parsed rows on sampled statements for all institutions, indicating extraction coverage gaps on real PDFs still need to be solved before precision targets are meaningful.
+- Added report service builders for income statement, balance sheet, financial insights, and tax detail:
+  - `buildIncomeStatement`
+  - `buildBalanceSheet`
+  - `buildFinancialInsights`
+  - `buildTaxDetailBreakdown`
+- Added API routes:
+  - `GET /v1/reports/income-statement`
+  - `GET /v1/reports/balance-sheet`
+  - `GET /v1/reports/financial-insights`
+  - `GET /v1/reports/tax-detail`
+- Extended dashboard UI with report panels for those endpoints (`apps/web/index.html`, `apps/web/app.js`, `apps/web/styles.css`).
+- Added deterministic report aggregation tests in `tests/report-service.test.mjs`.
 
 ## 7) Decision log to preserve
 - Product priority: tax-ready output first, analytics second.
@@ -110,5 +136,5 @@ node apps/worker/src/index.mjs --once
 6. Choose the next sprint item from `backlog.md` and begin implementation.
 
 ## 9) Immediate next target recommended
-Continue `P0-1` in `backlog.md`: replace shared parser core with institution-specific row extraction for the six adapters and capture measured precision results per institution.  
-Reason: current adapter dispatch and confidence gating are in place, but precision acceptance criteria are not yet met.
+Continue `P0-1` in `backlog.md`: tune adapter heuristics using real sampled statement lines and capture measured precision results per institution.  
+Reason: adapter-specific parsing exists for all target institutions, but precision acceptance criteria are not yet measured/verified.

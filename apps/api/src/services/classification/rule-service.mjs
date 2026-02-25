@@ -151,8 +151,18 @@ export function buildPatternFromTransaction(transaction) {
     return null;
   }
 
-  // Match words in order while allowing separators often present in statement strings.
-  return `\\b${words.map((word) => escapeRegex(word)).join("\\s*")}\\b`;
+  const [first, second, ...rest] = words.map((word) => escapeRegex(word));
+  if (!second) {
+    return `\\b${first}\\b`;
+  }
+
+  // Require first two key tokens, allowing one optional in-between token (e.g., "acme co payment").
+  let pattern = `\\b${first}(?:(?:\\W|_)+[a-z0-9]{2,}){0,1}(?:\\W|_)*${second}`;
+  for (const token of rest) {
+    pattern += `(?:(?:\\W|_)*${token})?`;
+  }
+  pattern += "\\b";
+  return pattern;
 }
 
 export function createTenantRuleFromTransaction({

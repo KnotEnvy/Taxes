@@ -14,6 +14,19 @@ const elements = {
   summaryBtn: document.querySelector("#summaryBtn"),
   summaryRows: document.querySelector("#summaryRows"),
   csvLink: document.querySelector("#csvLink"),
+  incomeStatementBtn: document.querySelector("#incomeStatementBtn"),
+  incomeStatementRows: document.querySelector("#incomeStatementRows"),
+  incomeStatementTotals: document.querySelector("#incomeStatementTotals"),
+  balanceSheetBtn: document.querySelector("#balanceSheetBtn"),
+  balanceSheetRows: document.querySelector("#balanceSheetRows"),
+  balanceSheetTotals: document.querySelector("#balanceSheetTotals"),
+  insightsBtn: document.querySelector("#insightsBtn"),
+  insightsMetrics: document.querySelector("#insightsMetrics"),
+  insightsExpenseRows: document.querySelector("#insightsExpenseRows"),
+  insightsTrendRows: document.querySelector("#insightsTrendRows"),
+  taxDetailBtn: document.querySelector("#taxDetailBtn"),
+  taxDetailRows: document.querySelector("#taxDetailRows"),
+  taxDetailTotals: document.querySelector("#taxDetailTotals"),
   reloadReviewsBtn: document.querySelector("#reloadReviewsBtn"),
   reloadRulesBtn: document.querySelector("#reloadRulesBtn"),
   ruleRows: document.querySelector("#ruleRows"),
@@ -31,6 +44,27 @@ function selectedTenant() {
 
 function selectedYear() {
   return Number.parseInt(elements.yearSelect.value, 10);
+}
+
+function formatCurrency(value) {
+  return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+}
+
+function formatPercent(value) {
+  return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : "0.00%";
+}
+
+function renderMetricGrid(container, metrics) {
+  container.innerHTML = "";
+  for (const metric of metrics) {
+    const block = document.createElement("article");
+    block.className = "summary-metric";
+    block.innerHTML = `
+      <p class="label">${metric.label}</p>
+      <p class="value">${metric.value}</p>
+    `;
+    container.appendChild(block);
+  }
 }
 
 function appendLog(message, payload) {
@@ -126,9 +160,116 @@ function renderSummary(summary) {
       <td>${row.displayName}</td>
       <td>${row.irsLineRef}</td>
       <td>${row.count}</td>
-      <td>${row.total.toFixed(2)}</td>
+      <td>${formatCurrency(row.total)}</td>
     `;
     elements.summaryRows.appendChild(tr);
+  }
+}
+
+function renderIncomeStatement(report) {
+  renderMetricGrid(elements.incomeStatementTotals, [
+    { label: "Gross Inflows", value: formatCurrency(report.totals.grossInflows) },
+    { label: "Deductible Expenses", value: formatCurrency(report.totals.deductibleExpenses) },
+    { label: "Owner Draw/Non-deductible", value: formatCurrency(report.totals.ownerDrawAndNonDeductible) },
+    { label: "Net Operating Income", value: formatCurrency(report.totals.netOperatingIncome) },
+    { label: "Net After Owner Draw", value: formatCurrency(report.totals.netIncomeAfterOwnerDraw) },
+  ]);
+
+  elements.incomeStatementRows.innerHTML = "";
+  for (const row of report.expenseRows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.displayName}</td>
+      <td>${row.irsLineRef}</td>
+      <td>${row.count}</td>
+      <td>${formatCurrency(row.total)}</td>
+    `;
+    elements.incomeStatementRows.appendChild(tr);
+  }
+}
+
+function renderBalanceSheet(report) {
+  renderMetricGrid(elements.balanceSheetTotals, [
+    { label: "Total Assets (Est.)", value: formatCurrency(report.totals.totalAssetsEstimate) },
+    { label: "Total Liabilities (Est.)", value: formatCurrency(report.totals.totalLiabilitiesEstimate) },
+    { label: "Equity (Est.)", value: formatCurrency(report.totals.equityEstimate) },
+  ]);
+
+  elements.balanceSheetRows.innerHTML = "";
+  for (const row of report.rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.section}</td>
+      <td>${row.group}</td>
+      <td>${row.accountLabel}</td>
+      <td>${row.institution}</td>
+      <td>${formatCurrency(row.estimatedEndingBalance)}</td>
+    `;
+    elements.balanceSheetRows.appendChild(tr);
+  }
+}
+
+function renderInsights(report) {
+  renderMetricGrid(elements.insightsMetrics, [
+    { label: "Gross Inflows", value: formatCurrency(report.kpis.grossInflows) },
+    { label: "Total Outflows", value: formatCurrency(report.kpis.totalOutflows) },
+    { label: "Net Operating Income", value: formatCurrency(report.kpis.netOperatingIncome) },
+    { label: "Net Income After Draw", value: formatCurrency(report.kpis.netIncomeAfterOwnerDraw) },
+    { label: "Net Margin", value: formatPercent(report.kpis.netMargin) },
+    { label: "Open Review Items", value: String(report.kpis.openReviewItems) },
+  ]);
+
+  elements.insightsExpenseRows.innerHTML = "";
+  for (const row of report.topExpenseCategories) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.displayName}</td>
+      <td>${row.irsLineRef}</td>
+      <td>${row.count}</td>
+      <td>${formatCurrency(row.total)}</td>
+    `;
+    elements.insightsExpenseRows.appendChild(tr);
+  }
+
+  elements.insightsTrendRows.innerHTML = "";
+  for (const row of report.monthlyTrend) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.month}</td>
+      <td>${formatCurrency(row.inflows)}</td>
+      <td>${formatCurrency(row.outflows)}</td>
+      <td>${formatCurrency(row.netCashFlow)}</td>
+    `;
+    elements.insightsTrendRows.appendChild(tr);
+  }
+}
+
+function renderTaxDetail(report) {
+  renderMetricGrid(elements.taxDetailTotals, [
+    { label: "Gross Inflows", value: formatCurrency(report.summary.grossInflows) },
+    { label: "Deductible Expenses", value: formatCurrency(report.summary.deductibleExpenses) },
+    { label: "Non-deductible", value: formatCurrency(report.summary.nonDeductibleExpenses) },
+    { label: "Estimated Taxable Income", value: formatCurrency(report.summary.estimatedTaxableIncome) },
+    { label: "Estimated Federal Tax", value: formatCurrency(report.summary.estimatedFederalIncomeTax) },
+  ]);
+
+  elements.taxDetailRows.innerHTML = "";
+  const mergedRows = [
+    ...report.deductions.map((row) => ({ type: "Deduction", ...row })),
+    ...report.nonDeductible.map((row) => ({ type: "Non-deductible", ...row })),
+    ...report.creditsAndOffsets.map((row) => ({ type: "Credit/Offset", ...row })),
+  ];
+
+  for (const row of mergedRows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.type}</td>
+      <td>${row.displayName}</td>
+      <td>${row.irsLineRef}</td>
+      <td>${row.count}</td>
+      <td>${formatCurrency(row.total)}</td>
+    `;
+    elements.taxDetailRows.appendChild(tr);
   }
 }
 
@@ -240,6 +381,7 @@ async function resolveReview(reviewId, transactionId) {
   let categoryCode = null;
   let createRuleFromTransaction = false;
   let ruleScope = "TENANT";
+  let allowRuleFromParseWarning = false;
   if (transactionId) {
     categoryCode = prompt(
       "Optional category code for manual classification (e.g., supplies, wages, advertising). Leave blank to only resolve.",
@@ -248,6 +390,9 @@ async function resolveReview(reviewId, transactionId) {
     if (categoryCode) {
       createRuleFromTransaction = confirm("Create a reusable rule from this decision?");
       if (createRuleFromTransaction) {
+        allowRuleFromParseWarning = confirm(
+          "If this statement has PARSE_WARNING, allow learned rule creation anyway?",
+        );
         ruleScope = confirm("Create account-scoped rule? OK=ACCOUNT, Cancel=TENANT") ? "ACCOUNT" : "TENANT";
       }
     }
@@ -260,6 +405,7 @@ async function resolveReview(reviewId, transactionId) {
       categoryCode: categoryCode || undefined,
       createRuleFromTransaction,
       ruleScope,
+      allowRuleFromParseWarning,
     }),
   });
   appendLog(`Review resolved: ${reviewId}`, payload);
@@ -307,6 +453,49 @@ async function generateSummary() {
   renderSummary(summary);
   elements.csvLink.href = `/v1/reports/export?tenantId=${encodeURIComponent(tenantId)}&year=${year}&format=csv`;
   appendLog(`Summary generated for ${year}`, summary);
+}
+
+async function generateIncomeStatement() {
+  const tenantId = selectedTenant();
+  const year = selectedYear();
+  const report = await api(
+    `/v1/reports/income-statement?tenantId=${encodeURIComponent(tenantId)}&year=${year}`,
+    {
+      method: "GET",
+    },
+  );
+  renderIncomeStatement(report);
+  appendLog(`Income statement generated for ${year}`, report.totals);
+}
+
+async function generateBalanceSheet() {
+  const tenantId = selectedTenant();
+  const year = selectedYear();
+  const report = await api(`/v1/reports/balance-sheet?tenantId=${encodeURIComponent(tenantId)}&year=${year}`, {
+    method: "GET",
+  });
+  renderBalanceSheet(report);
+  appendLog(`Balance sheet generated for ${year}`, report.totals);
+}
+
+async function generateInsights() {
+  const tenantId = selectedTenant();
+  const year = selectedYear();
+  const report = await api(`/v1/reports/financial-insights?tenantId=${encodeURIComponent(tenantId)}&year=${year}`, {
+    method: "GET",
+  });
+  renderInsights(report);
+  appendLog(`Financial insights generated for ${year}`, report.kpis);
+}
+
+async function generateTaxDetail() {
+  const tenantId = selectedTenant();
+  const year = selectedYear();
+  const report = await api(`/v1/reports/tax-detail?tenantId=${encodeURIComponent(tenantId)}&year=${year}`, {
+    method: "GET",
+  });
+  renderTaxDetail(report);
+  appendLog(`Tax detail generated for ${year}`, report.summary);
 }
 
 function wireEvents() {
@@ -384,6 +573,38 @@ function wireEvents() {
       await generateSummary();
     } catch (error) {
       appendLog("Summary error", { message: error.message });
+    }
+  });
+
+  elements.incomeStatementBtn.addEventListener("click", async () => {
+    try {
+      await generateIncomeStatement();
+    } catch (error) {
+      appendLog("Income statement error", { message: error.message });
+    }
+  });
+
+  elements.balanceSheetBtn.addEventListener("click", async () => {
+    try {
+      await generateBalanceSheet();
+    } catch (error) {
+      appendLog("Balance sheet error", { message: error.message });
+    }
+  });
+
+  elements.insightsBtn.addEventListener("click", async () => {
+    try {
+      await generateInsights();
+    } catch (error) {
+      appendLog("Insights error", { message: error.message });
+    }
+  });
+
+  elements.taxDetailBtn.addEventListener("click", async () => {
+    try {
+      await generateTaxDetail();
+    } catch (error) {
+      appendLog("Tax detail error", { message: error.message });
     }
   });
 

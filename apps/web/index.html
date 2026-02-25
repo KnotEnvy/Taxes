@@ -166,6 +166,105 @@
         </div>
       </section>
 
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Income Statement (Estimated)</h2>
+          <button id="incomeStatementBtn">Generate Income Statement</button>
+        </div>
+        <div id="incomeStatementTotals" class="summary-grid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Expense Category</th>
+                <th>IRS Line</th>
+                <th>Count</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="incomeStatementRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Balance Sheet (Estimated)</h2>
+          <button id="balanceSheetBtn">Generate Balance Sheet</button>
+        </div>
+        <div id="balanceSheetTotals" class="summary-grid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Section</th>
+                <th>Group</th>
+                <th>Account</th>
+                <th>Institution</th>
+                <th>Estimated Ending Balance</th>
+              </tr>
+            </thead>
+            <tbody id="balanceSheetRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Financial Insights</h2>
+          <button id="insightsBtn">Generate Insights</button>
+        </div>
+        <div id="insightsMetrics" class="summary-grid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Top Expense Category</th>
+                <th>IRS Line</th>
+                <th>Count</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="insightsExpenseRows"></tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Inflows</th>
+                <th>Outflows</th>
+                <th>Net Cash Flow</th>
+              </tr>
+            </thead>
+            <tbody id="insightsTrendRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Tax Detail (Beyond Expenses)</h2>
+          <button id="taxDetailBtn">Generate Tax Detail</button>
+        </div>
+        <div id="taxDetailTotals" class="summary-grid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Category</th>
+                <th>IRS Line</th>
+                <th>Count</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="taxDetailRows"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="panel logs">
         <h2>Activity Log</h2>
         <pre id="logPanel"></pre>

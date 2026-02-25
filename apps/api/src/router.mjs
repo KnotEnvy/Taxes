@@ -15,7 +15,14 @@ import {
   serverError,
   text,
 } from "./http-utils.mjs";
-import { buildTaxSummary, taxSummaryToCsv } from "./services/reports/report-service.mjs";
+import {
+  buildBalanceSheet,
+  buildFinancialInsights,
+  buildIncomeStatement,
+  buildTaxDetailBreakdown,
+  buildTaxSummary,
+  taxSummaryToCsv,
+} from "./services/reports/report-service.mjs";
 import { listReviewItems } from "./services/review/review-service.mjs";
 import {
   createTenantRule,
@@ -23,6 +30,7 @@ import {
   deactivateTenantRule,
   listTenantRules,
 } from "./services/classification/rule-service.mjs";
+import { ensureLearnedRuleAllowed } from "./services/classification/rule-learning-guardrail.mjs";
 import { scanAndRegisterStatements, registerUploadedStatement } from "./services/statement-ingest-service.mjs";
 import {
   applyManualClassification,
@@ -95,6 +103,20 @@ function parseBooleanQuery(value) {
   return false;
 }
 
+function parseBooleanBody(value) {
+  return value === true || value === "true" || value === "1" || value === 1;
+}
+
+function parseReportScope(req, url, res) {
+  const tenantId = getTenantId(req, url);
+  const year = Number.parseInt(url.searchParams.get("year") ?? "", 10);
+  if (!tenantId || !Number.isInteger(year)) {
+    badRequest(res, "tenantId and year are required.");
+    return null;
+  }
+  return { tenantId, year };
+}
+
 function findTransactionContext(db, transactionId, tenantId) {
   const transaction = db.transactions.find((item) => item.id === transactionId && item.tenantId === tenantId);
   if (!transaction) {
@@ -129,6 +151,13 @@ function maybeCreateLearnedRule({
   if (!body.categoryCode) {
     throw new Error("categoryCode is required when createRuleFromTransaction=true.");
   }
+
+  ensureLearnedRuleAllowed({
+    db,
+    tenantId,
+    transaction,
+    allowParseWarningOverride: parseBooleanBody(body.allowRuleFromParseWarning),
+  });
 
   if (body.rulePattern) {
     return createTenantRule({
@@ -577,15 +606,73 @@ export function createRouter({
           methodNotAllowed(res);
           return;
         }
-        const tenantId = getTenantId(req, url);
-        const year = Number.parseInt(url.searchParams.get("year") ?? "", 10);
-        if (!tenantId || !Number.isInteger(year)) {
-          badRequest(res, "tenantId and year are required.");
+        const scope = parseReportScope(req, url, res);
+        if (!scope) {
           return;
         }
         const db = await store.read();
-        const summary = buildTaxSummary({ tenantId, year, db });
+        const summary = buildTaxSummary({ tenantId: scope.tenantId, year: scope.year, db });
         json(res, 200, summary);
+        return;
+      }
+
+      if (pathname === "/v1/reports/income-statement") {
+        if (req.method !== "GET") {
+          methodNotAllowed(res);
+          return;
+        }
+        const scope = parseReportScope(req, url, res);
+        if (!scope) {
+          return;
+        }
+        const db = await store.read();
+        const report = buildIncomeStatement({ tenantId: scope.tenantId, year: scope.year, db });
+        json(res, 200, report);
+        return;
+      }
+
+      if (pathname === "/v1/reports/balance-sheet") {
+        if (req.method !== "GET") {
+          methodNotAllowed(res);
+          return;
+        }
+        const scope = parseReportScope(req, url, res);
+        if (!scope) {
+          return;
+        }
+        const db = await store.read();
+        const report = buildBalanceSheet({ tenantId: scope.tenantId, year: scope.year, db });
+        json(res, 200, report);
+        return;
+      }
+
+      if (pathname === "/v1/reports/financial-insights") {
+        if (req.method !== "GET") {
+          methodNotAllowed(res);
+          return;
+        }
+        const scope = parseReportScope(req, url, res);
+        if (!scope) {
+          return;
+        }
+        const db = await store.read();
+        const report = buildFinancialInsights({ tenantId: scope.tenantId, year: scope.year, db });
+        json(res, 200, report);
+        return;
+      }
+
+      if (pathname === "/v1/reports/tax-detail") {
+        if (req.method !== "GET") {
+          methodNotAllowed(res);
+          return;
+        }
+        const scope = parseReportScope(req, url, res);
+        if (!scope) {
+          return;
+        }
+        const db = await store.read();
+        const report = buildTaxDetailBreakdown({ tenantId: scope.tenantId, year: scope.year, db });
+        json(res, 200, report);
         return;
       }
 
@@ -594,15 +681,13 @@ export function createRouter({
           methodNotAllowed(res);
           return;
         }
-        const tenantId = getTenantId(req, url);
-        const year = Number.parseInt(url.searchParams.get("year") ?? "", 10);
-        const format = (url.searchParams.get("format") ?? "csv").toLowerCase();
-        if (!tenantId || !Number.isInteger(year)) {
-          badRequest(res, "tenantId and year are required.");
+        const scope = parseReportScope(req, url, res);
+        if (!scope) {
           return;
         }
+        const format = (url.searchParams.get("format") ?? "csv").toLowerCase();
         const db = await store.read();
-        const summary = buildTaxSummary({ tenantId, year, db });
+        const summary = buildTaxSummary({ tenantId: scope.tenantId, year: scope.year, db });
         if (format === "json") {
           json(res, 200, summary);
           return;

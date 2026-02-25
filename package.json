@@ -9,6 +9,10 @@
     "dev:worker:watch": "node apps/worker/src/index.mjs",
     "test": "node --test tests/*.test.mjs",
     "validate": "node scripts/validate.mjs",
+    "parser:precision": "node scripts/parser-precision-sample.mjs",
+    "parser:real:scorecard": "node scripts/parser-real-data-harness.mjs scorecard",
+    "parser:real:collect": "node scripts/parser-real-data-harness.mjs collect",
+    "parser:real:score": "node scripts/parser-real-data-harness.mjs score",
     "db:apply-schema": "node scripts/db/apply-schema.mjs"
   },
   "dependencies": {
